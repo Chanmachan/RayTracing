@@ -12,9 +12,13 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 	// If we've exceeded the ray bounce limit, no more light is gathered.
 	if (depth <= 0)
 		return color(0,0,0);
-	if (world.hit(r, 0, infinity, rec)) {
-		// hitするたびに再帰で0.5をかけていく
+	// 散乱レイと球の交点はt=0ではない、浮動小数点の誤差でt=0.0000001,t=0.0000001みたいになる
+	// 0に近い交点を無視したいからt_minを0.001とかにしておく
+	if (world.hit(r, 0.001, infinity, rec)) {
+		// ランダムな点のベクトルtargetを決める
+		// (pはコンストラクタで0初期化されてる？)(normalは法線)
 		point3 target = rec.p + rec.normal + random_in_unit_sphere();
+		// hitするたびに再帰で0.5をかけていく
 		return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
 	}
 	vec3 unit_direction = unit_vector(r.direction());
