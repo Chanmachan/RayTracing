@@ -15,6 +15,7 @@ struct hit_record {
 
 	inline void set_face_normal(const ray& r, const vec3& outward_normal) {
 		/* 法線の向きを計算 */
+		// rayが物体の内か外かを調べる
 		// 内積がマイナスのときに1が入る
 		front_face = dot(r.direction(), outward_normal) < 0;
 		normal = front_face ? outward_normal :-outward_normal;
