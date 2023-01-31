@@ -8,6 +8,7 @@ struct hit_record;
 // scatter:散らばる attenuation:減衰
 class material {
 public:
+	// scattered:散乱した時の散乱レイ
 	virtual bool scatter(
 			const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
 	) const = 0;
@@ -60,6 +61,7 @@ public:
 	double fuzz;
 };
 
+// dielectric:誘電体(水、ガラス、ダイアモンドみたいな透明な物質)
 class dielectric : public material {
 public:
 	dielectric(double index_of_refraction) : ir(index_of_refraction) {}
@@ -73,10 +75,22 @@ public:
 		double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
 		vec3 unit_direction = unit_vector(r_in.direction());
-		// 屈折レイ
-		vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+		// sinθ'=n/n'sinθ
+		// sinθ=root1-con^2θ && cosθ=R•n
+		double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
+		double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-		scattered = ray(rec.p, refracted);
+		// 正のとき、屈折しない
+		bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+		vec3 direction;
+
+		// 必ず反射
+		if (cannot_refract)
+			direction = reflect(unit_direction, rec.normal);
+		// 反射か屈折
+		else
+			direction = refract(unit_direction, rec.normal, refraction_ratio);
+		scattered = ray(rec.p, direction);
 		return true;
 	}
 
