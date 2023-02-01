@@ -5,23 +5,32 @@
 
 class camera {
 public:
-	camera() {
-		// 画面の比率を16:9に
-		auto aspect_ratio = 16.0 / 9.0;
-		// viewportがスクリーン
-		auto viewport_height = 2.0;
+	camera(
+			point3 lookfrom, //カメラ位置
+			point3 lookat, // 注視する点
+			vec3   vup, // view_up:シーン全体の上方向
+			double vfov, // vertical field-of-view in degrees(垂直方向の視野角 (弧度法))
+			double aspect_ratio // スクリーンの縦横比
+	) {
+		auto theta = degrees_to_radians(vfov);
+		auto h = tan(theta/2);
+		// viewpointがスクリーン
+		auto viewport_height = 2.0 * h;
 		auto viewport_width = aspect_ratio * viewport_height;
-		// 視点からviewportまでの法線の大きさ
-		auto focal_length = 1.0;
 
-		origin = point3(0, 0, 0);
-		horizontal = vec3(viewport_width, 0.0, 0.0);
-		vertical = vec3(0.0, viewport_height, 0.0);
-		lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+
+		auto w = unit_vector(lookfrom - lookat); // スクリーンから視点までの法線ベクトル
+		auto u = unit_vector(cross(vup, w)); // 外積計算して正規化
+		auto v = cross(w, u);
+
+		origin = lookfrom;
+		horizontal = viewport_width * u;
+		vertical = viewport_height * v;
+		lower_left_corner = origin - horizontal/2 - vertical/2 - w;
 	}
 
-	ray get_ray(double u, double v) const {
-		return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+	ray get_ray(double s, double t) const {
+		return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
 	}
 
 private:
